@@ -990,51 +990,26 @@
                         </Anchor>
                     </Anchors>
                 </Texture>
-                <Texture name="$parentClass10" file="Interface\Buttons\UI-Quickslot2" hidden="false">
+                <Texture name="$parentClass10" file="Interface\Icons\Spell_Holy_RighteousFury" hidden="false">
                     <Size>
-                        <AbsDimension x="40" y="40" />
+                        <AbsDimension x="32" y="32" />
                     </Size>
                     <Anchors>
                         <Anchor point="TOPLEFT" relativeTo="$parentClass9">
                             <Offset>
-                                <AbsDimension x="52" y="-4" />
+                                <AbsDimension x="56" y="0" />
                             </Offset>
                         </Anchor>
                     </Anchors>
                 </Texture>
-                <Texture name="$parentClass10BG" file="Interface\Tooltips\UI-Tooltip-Background" hidden="false">
+                <FontString name="$parentClass10Label" inherits="GameFontNormalSmall" text="Judgement" justifyH="CENTER">
                     <Size>
-                        <AbsDimension x="24" y="24" />
+                        <AbsDimension x="64" y="12" />
                     </Size>
                     <Anchors>
-                        <Anchor point="CENTER" relativeTo="$parentClass10">
+                        <Anchor point="BOTTOM" relativeTo="$parentClass10" relativePoint="TOP">
                             <Offset>
-                                <AbsDimension x="0" y="0" />
-                            </Offset>
-                        </Anchor>
-                    </Anchors>
-                    <Color r="0.08" g="0.08" b="0.08" a="0.85"/>
-                </Texture>
-                <FontString name="$parentClass10Text1" inherits="GameFontNormalSmall" text="Judge" justifyH="CENTER">
-                    <Size>
-                        <AbsDimension x="44" y="12" />
-                    </Size>
-                    <Anchors>
-                        <Anchor point="TOP" relativeTo="$parentClass10BG">
-                            <Offset>
-                                <AbsDimension x="0" y="-2" />
-                            </Offset>
-                        </Anchor>
-                    </Anchors>
-                </FontString>
-                <FontString name="$parentClass10Text2" inherits="GameFontNormalSmall" text="Assign" justifyH="CENTER">
-                    <Size>
-                        <AbsDimension x="44" y="12" />
-                    </Size>
-                    <Anchors>
-                        <Anchor point="TOP" relativeTo="$parentClass10Text1" relativePoint="BOTTOM">
-                            <Offset>
-                                <AbsDimension x="0" y="0" />
+                                <AbsDimension x="0" y="2" />
                             </Offset>
                         </Anchor>
                     </Anchors>
