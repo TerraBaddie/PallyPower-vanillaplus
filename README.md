@@ -1,5 +1,8 @@
 # PallyPower - VanillaPlus
 
+<img width="1306" height="701" alt="image" src="https://github.com/user-attachments/assets/0676a65f-987b-428d-ac49-0d6c801ba923" />
+
+
 A **World of Warcraft 1.12.1 / VanillaPlus** PallyPower fork with updated blessing behavior, safer assignment parsing, and a new synchronized Judgement assignment column.
 
 ## Current changes
