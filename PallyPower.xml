@@ -1187,6 +1187,24 @@
                     </Anchor>
                 </Anchors>
             </Button>
+            <Button name="$parentAnnounce" inherits="GameMenuButtonTemplate" text="S" hidden="false">
+                <Size>
+                    <AbsDimension x="34" y="20"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="$parentCloseButton" relativePoint="LEFT">
+                        <Offset>
+                            <AbsDimension x="-1" y="0"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>this:RegisterForClicks("LeftButtonUp", "RightButtonUp"); PallyPower_UpdateAnnounceButton()</OnLoad>
+                    <OnClick>PallyPower_AnnounceButton_OnClick(this, arg1)</OnClick>
+                    <OnEnter>PallyPower_AnnounceButton_OnEnter(this)</OnEnter>
+                    <OnLeave>PallyPower_AnnounceButton_OnLeave(this)</OnLeave>
+                </Scripts>
+            </Button>
             <Button name="$parentRefresh" inherits="GameMenuButtonTemplate" text="PALLYPOWER_REFRESH" hidden="false">
                 <Size>
                     <AbsDimension x="100" y="20"/>
