@@ -1536,11 +1536,13 @@ function PallyPower_GetAllAssignedBlessings(assign)
     return unique, assignedCount
 end
 
-function PallyPower_BuildPaladinAnnouncement(name, assign)
+function PallyPower_BuildPaladinAnnouncement(name, assign, totalPaladins)
     local lines = {}
     local unique, assignedCount = PallyPower_GetAllAssignedBlessings(assign)
 
-    if table.getn(unique) == 1 then
+    if assignedCount == 0 and totalPaladins and totalPaladins > 6 then
+        tinsert(lines, name .. " does not need a blessing assignment; there are only 6 Paladin blessings.")
+    elseif table.getn(unique) == 1 then
         local buffName = PallyPower_BlessingID[unique[1]] or "Unknown"
         if assignedCount == 10 then
             tinsert(lines, name .. " is buffing " .. PallyPower_GetWholeGroupText() .. " with " .. buffName .. ".")
@@ -1595,7 +1597,7 @@ function PallyPower_BuildAssignmentAnnouncement()
 
     for i = 1, table.getn(paladins) do
         local name = paladins[i]
-        local paladinLines = PallyPower_BuildPaladinAnnouncement(name, PallyPower_Assignments[name])
+        local paladinLines = PallyPower_BuildPaladinAnnouncement(name, PallyPower_Assignments[name], table.getn(paladins))
         for j = 1, table.getn(paladinLines) do
             tinsert(lines, paladinLines[j])
         end
