@@ -18,6 +18,7 @@ PP_PerUser = {
     scanfreq = 10,
     scanperframe = 1,
     smartbuffs = 1,
+    announcechannel = "S",
 }
 PP_NextScan = PP_PerUser.scanfreq
 
@@ -42,7 +43,7 @@ PallyPower_ClassTexture[6] = "Interface\\AddOns\\PallyPower\\Icons\\Mage";
 PallyPower_ClassTexture[7] = "Interface\\AddOns\\PallyPower\\Icons\\Warlock";
 PallyPower_ClassTexture[8] = "Interface\\AddOns\\PallyPower\\Icons\\Shaman";
 PallyPower_ClassTexture[9] = "Interface\\AddOns\\PallyPower\\Icons\\Pet";
-PallyPower_ClassTexture[10] = "Interface\\Icons\\Spell_Holy_HolySmite";
+PallyPower_ClassTexture[10] = "Interface\\Icons\\Spell_Holy_RighteousFury";
 
 -- Judgement assignment support.  This deliberately remains separate from
 -- the blessing/buff bar logic: class ID 10 is a special assignment column.
@@ -74,6 +75,43 @@ CurrentBuffs = {};
 
 PP_PREFIX = "PLPWR";
 
+-- Assignment announcement controls. The compact button near the close button
+-- cycles between Say, Yell, Party, Raid, and (when permitted) Raid Warning.
+PallyPower_AnnounceChatType = {};
+PallyPower_AnnounceChatType["S"] = "SAY";
+PallyPower_AnnounceChatType["Y"] = "YELL";
+PallyPower_AnnounceChatType["P"] = "PARTY";
+PallyPower_AnnounceChatType["R"] = "RAID";
+PallyPower_AnnounceChatType["RW"] = "RAID_WARNING";
+
+PallyPower_AnnounceChatName = {};
+PallyPower_AnnounceChatName["S"] = "Say";
+PallyPower_AnnounceChatName["Y"] = "Yell";
+PallyPower_AnnounceChatName["P"] = "Party";
+PallyPower_AnnounceChatName["R"] = "Raid";
+PallyPower_AnnounceChatName["RW"] = "Raid Warning";
+
+PallyPower_AnnounceQueue = {};
+PallyPower_AnnounceQueueDelay = 0;
+PallyPower_AnnouncePendingLines = nil;
+PallyPower_AnnouncePendingChatType = nil;
+PallyPower_AnnouncePendingChatName = nil;
+
+StaticPopupDialogs["PALLYPOWER_ANNOUNCE_CONFIRM"] = {
+    text = "Send %s PallyPower assignment messages to %s?\n\nThis may spam chat. Are you sure?",
+    button1 = "Yes",
+    button2 = "No",
+    OnAccept = function()
+        PallyPower_ConfirmAssignmentAnnouncement()
+    end,
+    OnCancel = function()
+        PallyPower_ClearPendingAnnouncement()
+    end,
+    timeout = 0,
+    whileDead = 1,
+    hideOnEscape = 1,
+};
+
 local RestorSelfAutoCastTimeOut = 1;
 local RestorSelfAutoCast = false;
 
@@ -101,6 +139,20 @@ function PallyPower_OnLoad()
 end
 
 function PallyPower_OnUpdate(tdiff)
+    if PallyPower_AnnounceQueue and table.getn(PallyPower_AnnounceQueue) > 0 then
+        PallyPower_AnnounceQueueDelay = PallyPower_AnnounceQueueDelay - tdiff
+        if PallyPower_AnnounceQueueDelay <= 0 then
+            local announce = PallyPower_AnnounceQueue[1]
+            tremove(PallyPower_AnnounceQueue, 1)
+            if announce and announce["text"] and announce["chat"] then
+                SendChatMessage(announce["text"], announce["chat"])
+            end
+            -- Pace multi-line announcements to avoid dumping the full assignment
+            -- list into chat in a single frame on legacy/private servers.
+            PallyPower_AnnounceQueueDelay = 0.8
+        end
+    end
+
     if (RestorSelfAutoCast) then
 		RestorSelfAutoCastTimeOut = RestorSelfAutoCastTimeOut - tdiff;
 		if (RestorSelfAutoCastTimeOut < 0) then
@@ -216,6 +268,7 @@ function PallyPowerGrid_Update()
     local name, blessings
     if PallyPowerFrame:IsVisible() then
         PallyPowerFrame:SetScale(PP_PerUser.scalemain);
+        PallyPower_UpdateAnnounceButton()
         for name, blessings in AllPallys do
             getglobal("PallyPowerFramePlayer" .. i .. "Name"):SetText(name)
             getglobal("PallyPowerFramePlayer" .. i .. "Symbols"):SetText(blessings["symbols"])
@@ -1335,6 +1388,331 @@ function PallyPower_ScalingFrame_OnUpdate(arg1)
                 PallyPower_ScaleFrame(newscale)
             end
         end
+    end
+end
+
+function PallyPower_CanUseRaidWarning()
+    if GetNumRaidMembers() == 0 then
+        return false
+    end
+    return (IsRaidLeader() or IsRaidOfficer())
+end
+
+function PallyPower_GetAnnounceChannel()
+    if not PP_PerUser.announcechannel then
+        PP_PerUser.announcechannel = "S"
+    end
+    if PP_PerUser.announcechannel == "RW" and not PallyPower_CanUseRaidWarning() then
+        PP_PerUser.announcechannel = "R"
+    end
+    if not PallyPower_AnnounceChatType[PP_PerUser.announcechannel] then
+        PP_PerUser.announcechannel = "S"
+    end
+    return PP_PerUser.announcechannel
+end
+
+function PallyPower_UpdateAnnounceButton()
+    local btn = getglobal("PallyPowerFrameAnnounce")
+    if not btn then
+        return
+    end
+    btn:SetText(PallyPower_GetAnnounceChannel())
+end
+
+function PallyPower_CycleAnnounceChannel()
+    local modes = {"S", "Y", "P", "R"}
+    if PallyPower_CanUseRaidWarning() then
+        tinsert(modes, "RW")
+    end
+
+    local current = PallyPower_GetAnnounceChannel()
+    local index = 1
+    for i = 1, table.getn(modes) do
+        if modes[i] == current then
+            index = i
+            break
+        end
+    end
+
+    index = index + 1
+    if index > table.getn(modes) then
+        index = 1
+    end
+    PP_PerUser.announcechannel = modes[index]
+    PallyPower_UpdateAnnounceButton()
+end
+
+function PallyPower_AnnounceButton_OnEnter(btn)
+    local channel = PallyPower_GetAnnounceChannel()
+    local channelName = PallyPower_AnnounceChatName[channel] or channel
+
+    GameTooltip:SetOwner(btn, "ANCHOR_LEFT")
+    GameTooltip:SetText("Assignment Announce: " .. channelName, 1, 1, 1)
+    GameTooltip:AddLine("Left-click: change chat destination", 1, 0.82, 0)
+    GameTooltip:AddLine("Right-click: announce assignments", 1, 0.82, 0)
+    GameTooltip:AddLine(" ", 1, 1, 1)
+    GameTooltip:AddLine("S = Say    Y = Yell", 0.75, 0.75, 0.75)
+    GameTooltip:AddLine("P = Party  R = Raid", 0.75, 0.75, 0.75)
+    if PallyPower_CanUseRaidWarning() then
+        GameTooltip:AddLine("RW = Raid Warning", 0.75, 0.75, 0.75)
+    else
+        GameTooltip:AddLine("RW = Raid Warning (raid leader/assist only)", 0.5, 0.5, 0.5)
+    end
+    GameTooltip:AddLine("A confirmation appears before any chat is sent.", 0.6, 0.9, 1)
+    GameTooltip:Show()
+end
+
+function PallyPower_AnnounceButton_OnLeave(btn)
+    GameTooltip:Hide()
+end
+
+function PallyPower_GetPresentClasses()
+    local present = {}
+
+    local function AddUnit(unit, pet)
+        local class = UnitClass(unit)
+        if class then
+            local classID = PallyPower_GetClassID(class)
+            if classID >= 0 and classID <= 8 then
+                present[classID] = true
+            end
+        end
+        if pet and UnitName(pet) then
+            present[9] = true
+        end
+    end
+
+    if GetNumRaidMembers() > 0 then
+        for i = 1, GetNumRaidMembers() do
+            AddUnit("raid" .. i, "raidpet" .. i)
+        end
+    else
+        AddUnit("player", "pet")
+        for i = 1, GetNumPartyMembers() do
+            AddUnit("party" .. i, "partypet" .. i)
+        end
+    end
+
+    return present
+end
+
+function PallyPower_GetWholeGroupText()
+    if GetNumRaidMembers() > 0 then
+        return "the whole raid"
+    elseif GetNumPartyMembers() > 0 then
+        return "the whole party"
+    end
+    return "everyone"
+end
+
+function PallyPower_GetValidBlessingID(assign, classID)
+    if not assign then
+        return nil
+    end
+    local id = tonumber(assign[classID])
+    if id and id >= 0 and id <= 5 then
+        return id
+    end
+    return nil
+end
+
+function PallyPower_GetTwoBlessingRoles(assign, unique)
+    local warrior = PallyPower_GetValidBlessingID(assign, 0)
+    local rogue = PallyPower_GetValidBlessingID(assign, 1)
+    local melee = nil
+
+    if warrior and rogue and warrior == rogue then
+        melee = warrior
+    elseif warrior and not rogue then
+        melee = warrior
+    elseif rogue and not warrior then
+        melee = rogue
+    else
+        -- If the two non-mana classes are split or absent, Might is the most
+        -- useful deterministic signal for the melee side of a two-buff setup.
+        for i = 1, table.getn(unique) do
+            if unique[i] == 1 then
+                melee = 1
+            end
+        end
+    end
+
+    if melee ~= nil then
+        local meleeIsUsed = false
+        for i = 1, table.getn(unique) do
+            if unique[i] == melee then
+                meleeIsUsed = true
+                break
+            end
+        end
+        if not meleeIsUsed then
+            melee = nil
+        end
+    end
+
+    if melee == nil then
+        for i = 1, table.getn(unique) do
+            if unique[i] == 1 then
+                melee = 1
+                break
+            end
+        end
+    end
+
+    if melee == nil then
+        melee = unique[1]
+    end
+
+    local caster = nil
+    for i = 1, table.getn(unique) do
+        if unique[i] ~= melee then
+            caster = unique[i]
+            break
+        end
+    end
+
+    return melee, caster
+end
+
+function PallyPower_BuildPaladinAnnouncement(name, assign, present)
+    local lines = {}
+    local seen = {}
+    local unique = {}
+    local represented = 0
+    local assigned = 0
+
+    for classID = 0, 9 do
+        if present[classID] then
+            represented = represented + 1
+            local buffID = PallyPower_GetValidBlessingID(assign, classID)
+            if buffID then
+                assigned = assigned + 1
+                if not seen[buffID] then
+                    seen[buffID] = true
+                    tinsert(unique, buffID)
+                end
+            end
+        end
+    end
+
+    if table.getn(unique) == 1 then
+        local buffName = PallyPower_BlessingID[unique[1]] or "Unknown"
+        if represented > 0 and assigned == represented then
+            tinsert(lines, name .. " is buffing " .. PallyPower_GetWholeGroupText() .. " with " .. buffName .. ".")
+        else
+            tinsert(lines, name .. " is buffing assigned targets with " .. buffName .. ".")
+        end
+    elseif table.getn(unique) == 2 then
+        local meleeID, casterID = PallyPower_GetTwoBlessingRoles(assign, unique)
+        local meleeName = PallyPower_BlessingID[meleeID] or "Unknown"
+        local casterName = PallyPower_BlessingID[casterID] or "Unknown"
+        tinsert(lines, name .. " is buffing Non-Mana User (melee) with " .. meleeName .. ".")
+        tinsert(lines, name .. " is buffing Mana User (caster) with " .. casterName .. ".")
+
+        -- Standard Vanilla player hyperlinks make the Paladin name clickable;
+        -- clicking it opens a /w to that player without sending anything.
+        local whisperName = "|Hplayer:" .. name .. "|h[" .. name .. "]|h"
+        tinsert(lines, "Whisper " .. whisperName .. " if Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. ".")
+    elseif table.getn(unique) > 2 then
+        tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
+    end
+
+    local judgementID = nil
+    if assign then
+        judgementID = tonumber(assign[10])
+    end
+    if judgementID and PallyPower_JudgementID[judgementID] then
+        tinsert(lines, name .. " is assigned to Judgement of " .. PallyPower_JudgementID[judgementID] .. ".")
+    end
+
+    return lines
+end
+
+function PallyPower_BuildAssignmentAnnouncement()
+    local lines = {}
+    local present = PallyPower_GetPresentClasses()
+    local paladins = {}
+
+    for name, skills in AllPallys do
+        if PallyPower_Assignments[name] then
+            tinsert(paladins, name)
+        end
+    end
+    table.sort(paladins)
+
+    for i = 1, table.getn(paladins) do
+        local name = paladins[i]
+        local paladinLines = PallyPower_BuildPaladinAnnouncement(name, PallyPower_Assignments[name], present)
+        for j = 1, table.getn(paladinLines) do
+            tinsert(lines, paladinLines[j])
+        end
+    end
+
+    return lines
+end
+
+function PallyPower_ClearPendingAnnouncement()
+    PallyPower_AnnouncePendingLines = nil
+    PallyPower_AnnouncePendingChatType = nil
+    PallyPower_AnnouncePendingChatName = nil
+end
+
+function PallyPower_ConfirmAssignmentAnnouncement()
+    if not PallyPower_AnnouncePendingLines or not PallyPower_AnnouncePendingChatType then
+        PallyPower_ClearPendingAnnouncement()
+        return
+    end
+
+    for i = 1, table.getn(PallyPower_AnnouncePendingLines) do
+        local announce = {}
+        announce["text"] = PallyPower_AnnouncePendingLines[i]
+        announce["chat"] = PallyPower_AnnouncePendingChatType
+        tinsert(PallyPower_AnnounceQueue, announce)
+    end
+    PallyPower_AnnounceQueueDelay = 0
+
+    local count = table.getn(PallyPower_AnnouncePendingLines)
+    local channelName = PallyPower_AnnouncePendingChatName or "chat"
+    PallyPower_ClearPendingAnnouncement()
+    PallyPower_ShowFeedback(" Queued " .. count .. " assignment messages for " .. channelName, 0.5, 1, 1, 1)
+end
+
+function PallyPower_PrepareAssignmentAnnouncement()
+    if table.getn(PallyPower_AnnounceQueue) > 0 then
+        PallyPower_ShowFeedback(" Assignment announcement is already being sent", 1, 0.82, 0, 1)
+        return
+    end
+
+    local channel = PallyPower_GetAnnounceChannel()
+    if channel == "P" and GetNumPartyMembers() == 0 and GetNumRaidMembers() == 0 then
+        PallyPower_ShowFeedback(" Party announce requires a party or raid", 1, 0.5, 0.5, 1)
+        return
+    elseif channel == "R" and GetNumRaidMembers() == 0 then
+        PallyPower_ShowFeedback(" Raid announce requires a raid", 1, 0.5, 0.5, 1)
+        return
+    elseif channel == "RW" and not PallyPower_CanUseRaidWarning() then
+        PallyPower_ShowFeedback(" Raid Warning requires raid leader/assist", 1, 0.5, 0.5, 1)
+        PallyPower_UpdateAnnounceButton()
+        return
+    end
+
+    local lines = PallyPower_BuildAssignmentAnnouncement()
+    if table.getn(lines) == 0 then
+        PallyPower_ShowFeedback(" No blessing or Judgement assignments to announce", 1, 0.82, 0, 1)
+        return
+    end
+
+    PallyPower_AnnouncePendingLines = lines
+    PallyPower_AnnouncePendingChatType = PallyPower_AnnounceChatType[channel]
+    PallyPower_AnnouncePendingChatName = PallyPower_AnnounceChatName[channel]
+    StaticPopup_Show("PALLYPOWER_ANNOUNCE_CONFIRM", tostring(table.getn(lines)), PallyPower_AnnouncePendingChatName)
+end
+
+function PallyPower_AnnounceButton_OnClick(btn, mouseBtn)
+    if mouseBtn == "RightButton" then
+        PallyPower_PrepareAssignmentAnnouncement()
+    else
+        PallyPower_CycleAnnounceChannel()
     end
 end
 
