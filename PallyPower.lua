@@ -1563,7 +1563,7 @@ function PallyPower_BuildPaladinAnnouncement(name, assign)
             -- embedded player hyperlink escape sequences in SendChatMessage.
             -- The normal WoW sender name shown beside the message is already
             -- clickable and can be used to whisper this Paladin.
-            tinsert(lines, "Whisper " .. name .. " if Non-Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
+            tinsert(lines, "Whisper " .. name .. " if Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
         else
             tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
         end
