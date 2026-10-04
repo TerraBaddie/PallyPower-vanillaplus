@@ -57,3 +57,13 @@ The small button beside the close button selects where assignments are announced
 **Left-click** cycles destinations. **Right-click** opens a confirmation before sending. Multi-line output is paced to reduce chat-flood risk. For a two-blessing split, the announcer uses **Non-Mana User (melee)** and **Mana User (caster)** wording and includes a clickable Paladin name so players can open a whisper for an alternate blessing. Judgement assignments are announced as `NAME is assigned to Judgement of ...`.
 
 Current feature build: **1.7-JA2**.
+
+
+### JA3 announcer fix
+
+The blessing announcer now summarizes from the configured PallyPower class assignment columns rather than only classes currently present in the live roster. This fixes solo testing and cases where Warrior/Rogue/Pets were assigned Might while the player's own Paladin column used Wisdom. The simple role buckets are:
+
+- **Non-Mana User (melee):** Warrior, Rogue, Pets
+- **Mana User (caster):** Priest, Druid, Paladin, Hunter, Mage, Warlock, Shaman
+
+Current feature build: **1.7-JA3**.
