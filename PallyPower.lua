@@ -1466,36 +1466,6 @@ function PallyPower_AnnounceButton_OnLeave(btn)
     GameTooltip:Hide()
 end
 
-function PallyPower_GetPresentClasses()
-    local present = {}
-
-    local function AddUnit(unit, pet)
-        local class = UnitClass(unit)
-        if class then
-            local classID = PallyPower_GetClassID(class)
-            if classID >= 0 and classID <= 8 then
-                present[classID] = true
-            end
-        end
-        if pet and UnitName(pet) then
-            present[9] = true
-        end
-    end
-
-    if GetNumRaidMembers() > 0 then
-        for i = 1, GetNumRaidMembers() do
-            AddUnit("raid" .. i, "raidpet" .. i)
-        end
-    else
-        AddUnit("player", "pet")
-        for i = 1, GetNumPartyMembers() do
-            AddUnit("party" .. i, "partypet" .. i)
-        end
-    end
-
-    return present
-end
-
 function PallyPower_GetWholeGroupText()
     if GetNumRaidMembers() > 0 then
         return "the whole raid"
@@ -1516,103 +1486,86 @@ function PallyPower_GetValidBlessingID(assign, classID)
     return nil
 end
 
-function PallyPower_GetTwoBlessingRoles(assign, unique)
-    local warrior = PallyPower_GetValidBlessingID(assign, 0)
-    local rogue = PallyPower_GetValidBlessingID(assign, 1)
-    local melee = nil
+-- Announcement roles intentionally follow the simple PallyPower assignment
+-- convention requested for raid coordination, not the live roster:
+--   Non-Mana User (melee): Warrior, Rogue, Pets
+--   Mana User (caster):    Priest, Druid, Paladin, Hunter, Mage, Warlock, Shaman
+--
+-- Reading the assignment grid itself also means announcements can be tested
+-- correctly while solo; the old JA2 code only inspected classes currently in
+-- the roster, which made a solo Paladin look like "everyone = Wisdom".
+PallyPower_AnnounceMeleeClasses = {0, 1, 9}
+PallyPower_AnnounceCasterClasses = {2, 3, 4, 5, 6, 7, 8}
 
-    if warrior and rogue and warrior == rogue then
-        melee = warrior
-    elseif warrior and not rogue then
-        melee = warrior
-    elseif rogue and not warrior then
-        melee = rogue
-    else
-        -- If the two non-mana classes are split or absent, Might is the most
-        -- useful deterministic signal for the melee side of a two-buff setup.
-        for i = 1, table.getn(unique) do
-            if unique[i] == 1 then
-                melee = 1
+function PallyPower_GetRoleBlessing(assign, classList)
+    local roleBlessing = nil
+    local hasAssignment = false
+
+    for i = 1, table.getn(classList) do
+        local buffID = PallyPower_GetValidBlessingID(assign, classList[i])
+        if buffID then
+            hasAssignment = true
+            if roleBlessing == nil then
+                roleBlessing = buffID
+            elseif roleBlessing ~= buffID then
+                -- More than one blessing inside the same simple role bucket.
+                return nil, true, true
             end
         end
     end
 
-    if melee ~= nil then
-        local meleeIsUsed = false
-        for i = 1, table.getn(unique) do
-            if unique[i] == melee then
-                meleeIsUsed = true
-                break
-            end
-        end
-        if not meleeIsUsed then
-            melee = nil
-        end
-    end
-
-    if melee == nil then
-        for i = 1, table.getn(unique) do
-            if unique[i] == 1 then
-                melee = 1
-                break
-            end
-        end
-    end
-
-    if melee == nil then
-        melee = unique[1]
-    end
-
-    local caster = nil
-    for i = 1, table.getn(unique) do
-        if unique[i] ~= melee then
-            caster = unique[i]
-            break
-        end
-    end
-
-    return melee, caster
+    return roleBlessing, hasAssignment, false
 end
 
-function PallyPower_BuildPaladinAnnouncement(name, assign, present)
-    local lines = {}
+function PallyPower_GetAllAssignedBlessings(assign)
     local seen = {}
     local unique = {}
-    local represented = 0
-    local assigned = 0
+    local assignedCount = 0
 
     for classID = 0, 9 do
-        if present[classID] then
-            represented = represented + 1
-            local buffID = PallyPower_GetValidBlessingID(assign, classID)
-            if buffID then
-                assigned = assigned + 1
-                if not seen[buffID] then
-                    seen[buffID] = true
-                    tinsert(unique, buffID)
-                end
+        local buffID = PallyPower_GetValidBlessingID(assign, classID)
+        if buffID then
+            assignedCount = assignedCount + 1
+            if not seen[buffID] then
+                seen[buffID] = true
+                tinsert(unique, buffID)
             end
         end
     end
+
+    return unique, assignedCount
+end
+
+function PallyPower_BuildPaladinAnnouncement(name, assign)
+    local lines = {}
+    local unique, assignedCount = PallyPower_GetAllAssignedBlessings(assign)
 
     if table.getn(unique) == 1 then
         local buffName = PallyPower_BlessingID[unique[1]] or "Unknown"
-        if represented > 0 and assigned == represented then
+        if assignedCount == 10 then
             tinsert(lines, name .. " is buffing " .. PallyPower_GetWholeGroupText() .. " with " .. buffName .. ".")
         else
             tinsert(lines, name .. " is buffing assigned targets with " .. buffName .. ".")
         end
     elseif table.getn(unique) == 2 then
-        local meleeID, casterID = PallyPower_GetTwoBlessingRoles(assign, unique)
-        local meleeName = PallyPower_BlessingID[meleeID] or "Unknown"
-        local casterName = PallyPower_BlessingID[casterID] or "Unknown"
-        tinsert(lines, name .. " is buffing Non-Mana User (melee) with " .. meleeName .. ".")
-        tinsert(lines, name .. " is buffing Mana User (caster) with " .. casterName .. ".")
+        local meleeID, meleeAssigned, meleeMixed = PallyPower_GetRoleBlessing(assign, PallyPower_AnnounceMeleeClasses)
+        local casterID, casterAssigned, casterMixed = PallyPower_GetRoleBlessing(assign, PallyPower_AnnounceCasterClasses)
 
-        -- Standard Vanilla player hyperlinks make the Paladin name clickable;
-        -- clicking it opens a /w to that player without sending anything.
-        local whisperName = "|Hplayer:" .. name .. "|h[" .. name .. "]|h"
-        tinsert(lines, "Whisper " .. whisperName .. " if Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. ".")
+        if meleeAssigned and casterAssigned and not meleeMixed and not casterMixed
+        and meleeID ~= nil and casterID ~= nil and meleeID ~= casterID then
+            local meleeName = PallyPower_BlessingID[meleeID] or "Unknown"
+            local casterName = PallyPower_BlessingID[casterID] or "Unknown"
+
+            tinsert(lines, name .. " is buffing Non-Mana User (melee) with " .. meleeName .. ".")
+            tinsert(lines, name .. " is buffing Mana User (caster) with " .. casterName .. ".")
+
+            -- Standard Vanilla player hyperlink. Clicking [NAME] opens a whisper
+            -- to that Paladin without automatically sending a message.
+            local whisperName = "|Hplayer:" .. name .. "|h[" .. name .. "]|h"
+            tinsert(lines, "Whisper " .. whisperName .. " if Non-Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
+        else
+            tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
+        end
     elseif table.getn(unique) > 2 then
         tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
     end
@@ -1630,7 +1583,6 @@ end
 
 function PallyPower_BuildAssignmentAnnouncement()
     local lines = {}
-    local present = PallyPower_GetPresentClasses()
     local paladins = {}
 
     for name, skills in AllPallys do
@@ -1642,7 +1594,7 @@ function PallyPower_BuildAssignmentAnnouncement()
 
     for i = 1, table.getn(paladins) do
         local name = paladins[i]
-        local paladinLines = PallyPower_BuildPaladinAnnouncement(name, PallyPower_Assignments[name], present)
+        local paladinLines = PallyPower_BuildPaladinAnnouncement(name, PallyPower_Assignments[name])
         for j = 1, table.getn(paladinLines) do
             tinsert(lines, paladinLines[j])
         end
