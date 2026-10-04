@@ -1,4 +1,4 @@
-PallyPower_Version = "1.7-JA4"
+PallyPower_Version = "1.7-JA5"
 SLASH_PALLYPOWER1 = "/pp"
 SLASH_PALLYPOWER2 = "/pallypower"
 
