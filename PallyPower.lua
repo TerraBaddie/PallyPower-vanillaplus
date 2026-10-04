@@ -1559,10 +1559,11 @@ function PallyPower_BuildPaladinAnnouncement(name, assign)
             tinsert(lines, name .. " is buffing Non-Mana User (melee) with " .. meleeName .. ".")
             tinsert(lines, name .. " is buffing Mana User (caster) with " .. casterName .. ".")
 
-            -- Standard Vanilla player hyperlink. Clicking [NAME] opens a whisper
-            -- to that Paladin without automatically sending a message.
-            local whisperName = "|Hplayer:" .. name .. "|h[" .. name .. "]|h"
-            tinsert(lines, "Whisper " .. whisperName .. " if Non-Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
+            -- Keep outgoing chat text plain. Legacy ChatThrottleLib rejects
+            -- embedded player hyperlink escape sequences in SendChatMessage.
+            -- The normal WoW sender name shown beside the message is already
+            -- clickable and can be used to whisper this Paladin.
+            tinsert(lines, "Whisper " .. name .. " if Non-Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
         else
             tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
         end
