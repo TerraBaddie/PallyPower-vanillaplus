@@ -68,7 +68,8 @@ Current scope:
 - It does NOT automatically cast a Seal or Judgement.
 - It does NOT currently track whether the Judgement debuff is active on the
   target.
-- It does NOT announce assignments to Raid/Party chat.
+- Judgement assignments can now be included in the optional chat announcement
+  feature described below.
 
 5. Judgement Assignment Synchronization
 ----------------------------------------
@@ -159,3 +160,56 @@ NOTES
 The Judgement system is currently intended for raid coordination rather than
 combat automation. Blessing functionality remains separate from Judgement
 assignments so the original PallyPower workflow is preserved.
+
+
+9. Assignment Chat Announcer
+----------------------------
+Adds a compact chat-destination button beside the main PallyPower close button.
+
+Left-click cycles through:
+- S  = Say
+- Y  = Yell
+- P  = Party
+- R  = Raid
+- RW = Raid Warning
+
+Raid Warning is only offered while the player is in a raid and has raid
+leader/assistant privileges. If Raid Warning was selected and that permission
+is lost, PallyPower automatically falls back to Raid.
+
+Hovering the button explains the channel abbreviations and controls.
+Right-click prepares the assignment announcement. Before anything is sent,
+PallyPower displays an "Are you sure?" confirmation that includes the number of
+messages and the selected chat destination.
+
+The announcement batch is paced at approximately one line every 0.8 seconds so
+it does not dump every assignment into chat in a single frame.
+
+Announcement wording:
+- If one Paladin has the same blessing for every represented class in the current
+  group/raid:
+
+    NAME is buffing the whole raid with Kings.
+
+  ("whole party" is used in a party.)
+
+- If two blessings are in use:
+
+    NAME is buffing Non-Mana User (melee) with Might.
+    NAME is buffing Mana User (caster) with Wisdom.
+    Whisper [NAME] if Mana User (melee) and you would rather have Might over Wisdom.
+
+- The [NAME] in the Whisper line is a normal Vanilla player hyperlink. Clicking
+  it opens a /w to that Paladin; it does not automatically send a whisper.
+
+- If the Paladin has a Judgement assignment, it is announced as:
+
+    NAME is assigned to Judgement of Wisdom.
+
+- If more than two distinct blessings are assigned to represented classes, the
+  announcer uses a short custom-assignment notice rather than guessing which
+  blessing should be called melee/caster.
+
+10. Version
+-----------
+- Current feature build: 1.7-JA2
