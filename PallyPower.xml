@@ -1002,7 +1002,7 @@
                         </Anchor>
                     </Anchors>
                 </Texture>
-                <FontString name="$parentClass10Label" inherits="GameFontNormalSmall" text="Judgement" justifyH="CENTER">
+                <FontString name="$parentClass10Label" inherits="GameFontNormalSmall" text="Judgements" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="64" y="12" />
                     </Size>
@@ -1014,7 +1014,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass0Label" inherits="GameFontNormalSmall" text="Warrior" justifyH="CENTER">
+                <FontString name="$parentClass0Label" inherits="GameFontNormalSmall" text="Warriors" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1026,7 +1026,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass1Label" inherits="GameFontNormalSmall" text="Rogue" justifyH="CENTER">
+                <FontString name="$parentClass1Label" inherits="GameFontNormalSmall" text="Rogues" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1038,7 +1038,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass2Label" inherits="GameFontNormalSmall" text="Priest" justifyH="CENTER">
+                <FontString name="$parentClass2Label" inherits="GameFontNormalSmall" text="Priests" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1050,7 +1050,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass3Label" inherits="GameFontNormalSmall" text="Druid" justifyH="CENTER">
+                <FontString name="$parentClass3Label" inherits="GameFontNormalSmall" text="Druids" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1062,7 +1062,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass4Label" inherits="GameFontNormalSmall" text="Paladin" justifyH="CENTER">
+                <FontString name="$parentClass4Label" inherits="GameFontNormalSmall" text="Paladins" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1074,7 +1074,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass5Label" inherits="GameFontNormalSmall" text="Hunter" justifyH="CENTER">
+                <FontString name="$parentClass5Label" inherits="GameFontNormalSmall" text="Hunters" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1086,7 +1086,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass6Label" inherits="GameFontNormalSmall" text="Mage" justifyH="CENTER">
+                <FontString name="$parentClass6Label" inherits="GameFontNormalSmall" text="Mages" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1098,7 +1098,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass7Label" inherits="GameFontNormalSmall" text="Warlock" justifyH="CENTER">
+                <FontString name="$parentClass7Label" inherits="GameFontNormalSmall" text="Warlocks" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
@@ -1110,7 +1110,7 @@
                         </Anchor>
                     </Anchors>
                 </FontString>
-                <FontString name="$parentClass8Label" inherits="GameFontNormalSmall" text="Shaman" justifyH="CENTER">
+                <FontString name="$parentClass8Label" inherits="GameFontNormalSmall" text="Shamans" justifyH="CENTER">
                     <Size>
                         <AbsDimension x="54" y="12" />
                     </Size>
