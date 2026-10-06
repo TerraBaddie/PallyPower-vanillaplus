@@ -1488,8 +1488,8 @@ end
 
 -- Announcement roles intentionally follow the simple PallyPower assignment
 -- convention requested for raid coordination, not the live roster:
---   Non-Mana User (melee): Warrior, Rogue, Pets
---   Mana User (caster):    Priest, Druid, Paladin, Hunter, Mage, Warlock, Shaman
+--   Non-Mana Users (melee): Warrior, Rogue, Pets
+--   Mana Users (caster):    Priest, Druid, Paladin, Hunter, Mage, Warlock, Shaman
 --
 -- Reading the assignment grid itself also means announcements can be tested
 -- correctly while solo; the old JA2 code only inspected classes currently in
@@ -1545,7 +1545,11 @@ function PallyPower_BuildPaladinAnnouncement(name, assign, totalPaladins)
     elseif table.getn(unique) == 1 then
         local buffName = PallyPower_BlessingID[unique[1]] or "Unknown"
         if assignedCount == 10 then
-            tinsert(lines, name .. " is buffing " .. PallyPower_GetWholeGroupText() .. " with " .. buffName .. ".")
+            if unique[1] == 2 then
+                tinsert(lines, name .. " is buffing everyone with " .. buffName .. ". Tanks should remove Salvation!")
+            else
+                tinsert(lines, name .. " is buffing everyone with " .. buffName .. ".")
+            end
         else
             tinsert(lines, name .. " is buffing assigned targets with " .. buffName .. ".")
         end
@@ -1558,14 +1562,14 @@ function PallyPower_BuildPaladinAnnouncement(name, assign, totalPaladins)
             local meleeName = PallyPower_BlessingID[meleeID] or "Unknown"
             local casterName = PallyPower_BlessingID[casterID] or "Unknown"
 
-            tinsert(lines, name .. " is buffing Non-Mana User (melee) with " .. meleeName .. ".")
-            tinsert(lines, name .. " is buffing Mana User (caster) with " .. casterName .. ".")
+            tinsert(lines, name .. " is buffing Non-Mana Users (melee) with " .. meleeName .. ".")
+            tinsert(lines, name .. " is buffing Mana Users (caster) with " .. casterName .. ".")
 
             -- Keep outgoing chat text plain. Legacy ChatThrottleLib rejects
             -- embedded player hyperlink escape sequences in SendChatMessage.
             -- The normal WoW sender name shown beside the message is already
             -- clickable and can be used to whisper this Paladin.
-            tinsert(lines, "Whisper " .. name .. " if Mana User (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
+            tinsert(lines, "Whisper " .. name .. " if Mana Users (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
         else
             tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
         end
