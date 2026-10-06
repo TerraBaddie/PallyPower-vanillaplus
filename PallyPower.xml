@@ -1009,7 +1009,7 @@
                     <Anchors>
                         <Anchor point="BOTTOM" relativeTo="$parentClass10" relativePoint="TOP">
                             <Offset>
-                                <AbsDimension x="0" y="2" />
+                                <AbsDimension x="4" y="2" />
                             </Offset>
                         </Anchor>
                     </Anchors>
