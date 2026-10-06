@@ -1538,20 +1538,22 @@ end
 
 function PallyPower_BuildPaladinAnnouncement(name, assign, totalPaladins)
     local lines = {}
+    local parts = {}
+    local salvationWarning = false
     local unique, assignedCount = PallyPower_GetAllAssignedBlessings(assign)
 
     if assignedCount == 0 and totalPaladins and totalPaladins > 6 then
-        tinsert(lines, name .. " does not need a blessing assignment; there are only 6 Paladin blessings.")
+        tinsert(parts, "No blessing needed (all 6 covered)")
     elseif table.getn(unique) == 1 then
         local buffName = PallyPower_BlessingID[unique[1]] or "Unknown"
+
         if assignedCount == 10 then
+            tinsert(parts, "Blessing " .. buffName .. " (everyone)")
             if unique[1] == 2 then
-                tinsert(lines, name .. " is buffing everyone with " .. buffName .. ". Tanks should remove Salvation!")
-            else
-                tinsert(lines, name .. " is buffing everyone with " .. buffName .. ".")
+                salvationWarning = true
             end
         else
-            tinsert(lines, name .. " is buffing assigned targets with " .. buffName .. ".")
+            tinsert(parts, "Blessing " .. buffName .. " (assigned targets)")
         end
     elseif table.getn(unique) == 2 then
         local meleeID, meleeAssigned, meleeMixed = PallyPower_GetRoleBlessing(assign, PallyPower_AnnounceMeleeClasses)
@@ -1562,27 +1564,38 @@ function PallyPower_BuildPaladinAnnouncement(name, assign, totalPaladins)
             local meleeName = PallyPower_BlessingID[meleeID] or "Unknown"
             local casterName = PallyPower_BlessingID[casterID] or "Unknown"
 
-            tinsert(lines, name .. " is buffing Non-Mana Users (melee) with " .. meleeName .. ".")
-            tinsert(lines, name .. " is buffing Mana Users (caster) with " .. casterName .. ".")
-
-            -- Keep outgoing chat text plain. Legacy ChatThrottleLib rejects
-            -- embedded player hyperlink escape sequences in SendChatMessage.
-            -- The normal WoW sender name shown beside the message is already
-            -- clickable and can be used to whisper this Paladin.
-            tinsert(lines, "Whisper " .. name .. " if Mana Users (melee) and you would rather have " .. meleeName .. " over " .. casterName .. " blessing.")
+            tinsert(parts, "Blessing " .. meleeName .. " (melees)")
+            tinsert(parts, "Blessing " .. casterName .. " (casters)")
         else
-            tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
+            tinsert(parts, "Custom blessings (check PallyPower)")
         end
     elseif table.getn(unique) > 2 then
-        tinsert(lines, name .. " has custom blessing assignments; check PallyPower.")
+        tinsert(parts, "Custom blessings (check PallyPower)")
     end
 
+    local judgementText = nil
     local judgementID = nil
     if assign then
         judgementID = tonumber(assign[10])
     end
     if judgementID and PallyPower_JudgementID[judgementID] then
-        tinsert(lines, name .. " is assigned to Judgement of " .. PallyPower_JudgementID[judgementID] .. ".")
+        judgementText = "Judgement of " .. PallyPower_JudgementID[judgementID]
+    end
+
+    if table.getn(parts) > 0 then
+        local line = name .. ": " .. table.concat(parts, ", ")
+        if salvationWarning then
+            line = line .. ", Tanks should remove Salvation!"
+            if judgementText then
+                line = line .. " " .. judgementText
+            end
+        elseif judgementText then
+            line = line .. ", " .. judgementText
+        end
+        line = line .. "."
+        tinsert(lines, line)
+    elseif judgementText then
+        tinsert(lines, name .. ": " .. judgementText .. ".")
     end
 
     return lines
