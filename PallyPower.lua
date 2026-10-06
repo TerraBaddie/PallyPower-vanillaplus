@@ -1546,7 +1546,7 @@ function PallyPower_BuildPaladinAnnouncement(name, assign, totalPaladins)
         local buffName = PallyPower_BlessingID[unique[1]] or "Unknown"
         if assignedCount == 10 then
             if unique[1] == 2 then
-                tinsert(lines, name .. " is buffing everyone with " .. buffName .. ". Tanks with Sanctuary should remove Salvation.")
+                tinsert(lines, name .. " is buffing everyone with " .. buffName .. ". Tanks should remove Salvation!")
             else
                 tinsert(lines, name .. " is buffing everyone with " .. buffName .. ".")
             end
